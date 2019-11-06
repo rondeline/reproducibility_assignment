@@ -70,11 +70,17 @@ reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = 
 
 ```{r}
 data <- read_sav("GroupC_2-10-2014/data/Study1_Data.sav")
+head(data)
+colnames(data)
+View(data) #135 rows matches 135 participants reported before exclusions
 ```
 
 # Step 3: Tidy data
 
 ```{r}
+data <- data %>%
+  filter(!is.na(Order)) #removed those who didn't return for T2 - matches 106 participants reported after exclusion
+
 ```
 
 # Step 4: Run analysis
@@ -87,11 +93,64 @@ data <- read_sav("GroupC_2-10-2014/data/Study1_Data.sav")
 ## Descriptive statistics
 
 ```{r}
+#Table 1 provides descriptive statistics for each measure for Study 1.
+
+#T1 Means
+#Curiosity T1 mean = 3.99
+mean(data$T1_Curious, na.rm = TRUE)
+
+#Interest Composite T1 mean = 3.54
+mean(data$T1_Interest_Composite, na.rm = TRUE)
+
+#Surprise T1 mean = 2.84
+mean(data$T1_Surprised, na.rm = TRUE)
+
+#Meaningfulness T1 mean = 3.81
+mean(data$T1_Meaningful, na.rm = TRUE)
+
+#Interesting T1 mean = 3.95
+mean(data$T1_Interesting, na.rm = TRUE)
+
+
+#T2 Means
+#Curiosity T2 mean = 4.34
+mean(data$T2_Curious, na.rm = TRUE)
+
+#Interest Composite T2 mean = 3.82
+mean(data$T2_Interest_Composite, na.rm = TRUE)
+
+#Surprise T2 mean = 3.25
+mean(data$T2_Surprised, na.rm = TRUE)
+
+#Meaningfulness T2 mean = 4.04
+mean(data$T2_Meaningful, na.rm = TRUE)
+
+#Interesting T2 mean = 4.19
+mean(data$T2_Interesting, na.rm = TRUE)
+
+
+#Underestimates
+#Curiosity underestimate = 0.35
+mean(data$T2_Curious, na.rm = TRUE) - mean(data$T1_Curious, na.rm = TRUE)
+
+#Interest Composite underestimate = 0.29
+mean(data$T2_Interest_Composite, na.rm = TRUE) - mean(data$T1_Interest_Composite, na.rm = TRUE)
+
+#Surprise underestimate = 0.40
+mean(data$T2_Surprised, na.rm = TRUE) - mean(data$T1_Surprised, na.rm = TRUE)
+
+#Meaningfulness underestimate = 0.22
+mean(data$T2_Meaningful, na.rm = TRUE) - mean(data$T1_Meaningful, na.rm = TRUE)
+
+#Interesting underestimate = 0.23
+mean(data$T2_Interesting, na.rm = TRUE) - mean(data$T1_Interesting, na.rm = TRUE)
 ```
 
 ## Inferential statistics
 
 ```{r}
+
+
 ```
 
 # Step 5: Conclusion

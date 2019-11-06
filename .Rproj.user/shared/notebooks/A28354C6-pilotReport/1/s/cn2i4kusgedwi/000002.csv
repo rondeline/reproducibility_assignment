@@ -1,0 +1,6 @@
+"0","mean(data$T2_Interesting, na.rm = TRUE) - mean(data$T1_Interesting, na.rm = TRUE)
+"
+"1","[1]"
+"1"," 0.2344265"
+"1","
+"

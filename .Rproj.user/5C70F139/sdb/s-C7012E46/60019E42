@@ -8,10 +8,11 @@
     "hash" : "2784738416",
     "id" : "60019E42",
     "lastKnownWriteTime" : 1569881506,
-    "last_content_update" : 1569881506,
+    "last_content_update" : 1573019553837,
     "path" : "~/Documents/PSYCH251/tidyverse-tutorial/tidyverse_tutorial.Rmd",
     "project_path" : null,
     "properties" : {
+        "last_setup_crc32" : "CFF71D5Bdc29487b"
     },
     "relative_order" : 2,
     "source_on_save" : false,

@@ -1,0 +1,4 @@
+"0","data <- read_sav(""data/Study1_Data.sav"")
+"
+"2","Error: 'data/Study1_Data.sav' does not exist in current working directory ('/Users/admin/Downloads/ps3').
+"
