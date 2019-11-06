@@ -1,0 +1,2 @@
+"0","# Prepare report object. This will be updated automatically by the reproCheck function each time values are compared"
+"0","reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = NA, valueType = NA, percentageError = NA, comparisonOutcome = NA, eyeballCheck = NA)"
