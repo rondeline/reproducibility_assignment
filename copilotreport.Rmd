@@ -1,0 +1,341 @@
+---
+title: "Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# Report Details
+
+```{r}
+articleID <- 9-2-2015 
+reportType <- "copilot"
+pilotNames <- "Rondeline Williams" 
+copilotNames <- "Maggie Perry"
+pilotTTC <- 360 
+copilotTTC <- NA # insert the co-pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
+pilotStartDate <- as.Date("11/04/19", format = "%m/%d/%y")
+copilotStartDate <- "11/08/19" # insert the co-piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- as.Date("11/07/19", format = "%m/%d/%y")
+```
+
+------
+
+#### Methods summary: 
+
+In the original paper, the researchers showed participants 160 trials of stimuli on a computer screen, which were changed from trial to trial by color, identity, and location (on the screen). The first 155 trials were referred to as presurprise trials. During these trials, participants were asked to report the location of the target. Trial 156 was a surprise trial, and participants were instead asked to recall which of the four letters and colors presented on the screen corresponded with the previous stimulus give two choices. The final four trials, 157-160, were known as control trials and followed the same structure as the surprise trial. 
+
+------
+
+#### Target outcomes: 
+
+# Target Outcomes
+## Article ID: 9-2-2015
+
+> On the presurprise trials, 89% of responses in the location task were correct, which indicates that participants could easily locate the target by using the critical attribute. To analyze the data from the surprise trial, we first divided participants into two groups defined by the order of the surprise tasks (identity task first vs. color task first). We found that the results were almost the same in these two groups. Accordingly, we combined the data for these groups in the analyses reported here. Only 6 of 20 (30%) participants correctly reported the color of the target letter, which is not much better than chance level of 25% (because there were four choices). Furthermore, performance on the identity task (25% correct) was exactly at chance level. These results demonstrate that participants were not capable of reporting a task-relevant attribute of a stimulus that had reached awareness less than 1 s before (i.e., attribute amnesia). Moreover, in the surprise trial, participants’ performance on the location task, unlike their performance on the color and identity tasks, was good (80% correct), and in fact was approximately as good as their performance on the location task in the presurprise trials (89% correct). This indicates that the poor performance on the color and identity tasks was not induced by the surprise test itself; it more likely reflects participants’ failure to remember these attributes. Participants exhibited a dramatic increase in reporting accuracy for the target letter’s color (70% correct) and identity (75% correct) on the first control trial (i.e., the trial immediately after the surprise trial). The improvement in each case was significant—color: 70% versus 30%, χ2(1, N = 40) = 6.40, p = .011, ϕ = .40; identity: 75% versus 25%, χ2(1, N = 40) = 10.00, p < .005, ϕ = .50. Performance on these two tasks remained constant on the final three control trials (color: 75%, 70%, and 80% correct; identity: 75%, 80%, and 75% correct). Participants’ performance on the location task was almost the same on the surprise trial (80% correct) as on the control trials (80%, 85%, 80%, and 70% correct). These results indicate a crucial role for expectation in controlling participants’ ability to report the attributes of a consciously perceived object. Therefore, Experiment 1a showed that when participants did not expect to report a particular attribute of an attended object, they were incapable of doing so, even when that same attribute had reached awareness immediately prior to the test.
+
+------
+
+```{r global_options, include=FALSE}
+# sets up some formatting options for the R Markdown document
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# Step 1: Load packages and prepare report object
+
+```{r}
+# load packages
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(ReproReports) # custom reporting functions
+
+```
+
+
+```{r}
+# Prepare report object. This will be updated automatically by the reproCheck function each time values are compared
+reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = NA, valueType = NA, percentageError = NA, comparisonOutcome = NA, eyeballCheck = NA)
+```
+
+# Step 2: Load data
+
+```{r}
+data <- read_csv("GroupD_9-2-2015/data/materials-9859-Top-level_materials/12022-Exp1.csv")
+
+View(data)
+```
+
+# Step 3: Tidy data
+
+```{r}
+#rename columns
+tidy_data <- data %>% 
+  rename(
+    Subject_N = "6",
+    Block_N = "1",
+    Trial_N = "1_1",
+    Color_T = "1_2",
+    Identity_T = "3",
+    Location_T = "3_1",
+    Color_R = "0",
+    Identity_R = "0_1", 
+    Location_R = "1_3",
+    Accuracy_CR = "0_2",
+    Accuracy_IR = "0_3",
+    Accuracy_LR = "0_4",
+  )
+
+View(tidy_data)
+
+```
+
+# Step 4: Run analysis
+
+## Pre-processing
+
+```{r}
+#No additional preprocessing necessary
+```
+
+## Descriptive statistics
+
+```{r}
+#percentage of presurprise trials correct
+presurprise_location_correct <- tidy_data %>% 
+  filter(Trial_N <= 155) %>% 
+  summarise(correct_l_ps = sum(Accuracy_LR)/sum(Block_N))
+
+presurprise_location_correct
+
+reproCheck(".89",".8938367", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+#MP NOTE: this looks different from the examples in the instructions, but seems to work!
+
+#percentage correct of surprise trial - color
+surprise_color_correct <- tidy_data %>% 
+  filter(Trial_N == 156) %>% 
+  summarise(correct_c_s = 
+              sum(Accuracy_CR/20))
+
+surprise_color_correct
+
+reproCheck(".3",".3", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#percentage correct of surprise trial - identity
+surprise_identity_correct <- tidy_data %>% 
+  filter(Trial_N == 156) %>% 
+  summarise(correct_i_s = 
+              sum(Accuracy_IR/20))
+
+surprise_identity_correct
+
+reproCheck(".25",".25", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#performance on location task during the surprise trial
+surprise_location_correct <- tidy_data %>% 
+  filter(Trial_N == 156) %>% 
+  summarise(correct_l_ps = (sum(Accuracy_LR)/20))
+
+surprise_location_correct
+
+reproCheck(".8",".8", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#performance on first control trial - color
+control_color_correct <- tidy_data %>% 
+  filter(Trial_N == 157) %>% 
+  summarise(correct_c_c = 
+              sum(Accuracy_CR/20))
+
+control_color_correct
+
+reproCheck(".7",".7", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#performance on first control trial - identity
+control_identity_correct <- tidy_data %>% 
+  filter(Trial_N == 157) %>% 
+  summarise(correct_i_c = 
+              sum(Accuracy_IR/20))
+control_identity_correct
+
+reproCheck(".75",".75", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#performance on next three control trials - color
+control158_color_correct <- tidy_data %>% 
+  filter(Trial_N == 158) %>% 
+  summarise(correct_c8_c = 
+              sum(Accuracy_CR/20))
+
+control158_color_correct
+
+reproCheck(".75",".75", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control159_color_correct <- tidy_data %>% 
+  filter(Trial_N == 159) %>% 
+  summarise(correct_c9_c = 
+              sum(Accuracy_CR/20))
+
+control159_color_correct
+
+reproCheck(".7",".7", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control160_color_correct <- tidy_data %>% 
+  filter(Trial_N == 160) %>% 
+  summarise(correct_c0_c = 
+              sum(Accuracy_CR/20))
+
+control160_color_correct
+
+reproCheck(".8",".8", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#performance on next three control trials - identity
+control158_identity_correct <- tidy_data %>% 
+  filter(Trial_N == 158) %>% 
+  summarise(correct_i8_c = 
+              sum(Accuracy_IR/20))
+
+control158_identity_correct
+
+reproCheck(".75",".75", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control159_identity_correct <- tidy_data %>% 
+  filter(Trial_N == 159) %>% 
+  summarise(correct_i9_c = 
+              sum(Accuracy_IR/20))
+
+control159_identity_correct
+
+reproCheck(".8",".8", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control160_identity_correct <- tidy_data %>% 
+  filter(Trial_N == 160) %>% 
+  summarise(correct_i0_c = 
+              sum(Accuracy_IR/20))
+
+control160_identity_correct
+
+reproCheck(".75",".75", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+#performance on all control trials - location
+control_location_correct <- tidy_data %>% 
+  filter(Trial_N == 157) %>% 
+  summarise(correct_l_c = 
+              sum(Accuracy_LR/20))
+
+control_location_correct
+
+reproCheck(".8",".8", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control158_location_correct <- tidy_data %>% 
+  filter(Trial_N == 158) %>% 
+  summarise(correct_l8_c = 
+              sum(Accuracy_LR/20))
+
+control158_location_correct
+
+reproCheck(".85",".85", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control159_location_correct <- tidy_data %>% 
+  filter(Trial_N == 159) %>% 
+  summarise(correct_l9_c = 
+              sum(Accuracy_LR/20))
+control159_location_correct
+
+reproCheck(".8",".8", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+control160_location_correct <- tidy_data %>% 
+  filter(Trial_N == 160) %>% 
+  summarise(correct_l0_c = 
+              sum(Accuracy_LR/20))
+control160_location_correct
+
+reproCheck(".7",".7", valueType = c("other"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+
+```
+
+## Inferential statistics
+
+```{r}
+color_compare <- tidy_data %>% 
+  filter(Trial_N == 156 | Trial_N == 157) %>% 
+  group_by(Trial_N) %>% 
+  summarise(color_right = sum(Accuracy_CR),
+            color_wrong = 20 - sum(Accuracy_CR)) %>% 
+  select(color_right, color_wrong)                   #MP NOTE: i got an error for this line: "unused arguments (color_right, color_wrong)" - when you run the rest of the chunk without this line it works 
+color_compare
+
+chisq.test(color_compare, correct=F)
+
+#MP NOTE: should also calculate phi, here is code, matches original phi = .4
+color_phi_table <- dplyr::select(color_compare, color_wrong, color_right)
+color_phi <- psych::phi(color_phi, digits = 2) 
+
+reproCheck("6.40", "6.4", valueType = c("x2"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+#MP NOTE: adding reproCheck for phi below - don't need eyeballCheck or round arguments for this one
+reproCheck(reportedValue = '.4', obtainedValue = color_phi, valueType = 'phi')
+
+
+identity_compare <- tidy_data %>% 
+  filter(Trial_N == 156 | Trial_N == 157) %>% 
+  group_by(Trial_N) %>% 
+  summarise(identity_right = sum(Accuracy_IR),
+            identity_wrong = 20 - sum(Accuracy_IR)) %>% 
+  select(identity_right, identity_wrong)            #MP NOTE: same error with this line, works without it
+identity_compare
+
+chisq.test(identity_compare, correct=F)
+
+#MP NOTE: here is code for phi, matches original phi = .5
+identity_phi_table <- dplyr::select(identity_compare, identity_wrong, identity_right)
+identity_phi <- psych::phi(identity_phi, digits = 2) 
+
+reproCheck("10", "10", valueType = c("x2"), eyeballCheck = NA, round = TRUE, updatedReportObject = reportObject)
+#MP NOTE: reproCheck for phi below
+reproCheck(reportedValue = '.5', obtainedValue = identity_phi, valueType = 'phi')
+
+#MP NOTE: Should also add reproCheck for p values - these didn't match original when I ran the chisq test
+#For color I got p = .04 but they reported p = .011
+#For identity I got p = .007 but they reported p < .005
+
+```
+
+# Step 5: Conclusion
+
+For this project, I reproduced findings from Chen & Wyble (2014), which found that people exhibit attribute amnesia, which is different from inattentional blindness, when they are unexpectedly asked to recall a stimulus attribute despite having just seen it seconds before. In my reproduction, I successfully reproduced all values from the original paper, including participants' accuracy during the presurprise, surprise, and control trials for stimulus color, location, and identity. The original paper ran a chi-square analysis to measure color and identity accuracy differences between the last presurprise and surprise trials. My inferential statistics section shows both values were reproduced exactly. 
+
+
+```{r}
+reportObject <- reportObject %>%
+  filter(dummyRow == FALSE) %>% # remove the dummy row
+  select(-dummyRow) %>% # remove dummy row designation
+  mutate(articleID = articleID) %>% # add variables to report 
+  select(articleID, everything()) # make articleID first column
+
+# decide on final outcome
+if(any(reportObject$comparisonOutcome %in% c("MAJOR_ERROR", "DECISION_ERROR"))){
+  finalOutcome <- "Failure"
+}else{
+  finalOutcome <- "Success"
+}
+
+# collate report extra details
+reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, finalOutcome)
+
+# save report objects
+if(reportType == "pilot"){
+  write_csv(reportObject, "pilotReportDetailed.csv")
+  write_csv(reportExtras, "pilotReportExtras.csv")
+}
+
+if(reportType == "copilot"){
+  write_csv(reportObject, "copilotReportDetailed.csv")
+  write_csv(reportExtras, "copilotReportExtras.csv")
+}
+```
+
+# Session information
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
