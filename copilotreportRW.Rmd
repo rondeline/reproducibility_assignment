@@ -1,0 +1,448 @@
+---
+title: "Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# Report Details
+
+
+```{r}
+articleID <- 2-10-2014 # insert the article ID code here e.g., "10-3-2015"
+reportType <- "pilot" # specify whether this is the 'pilot' report or 'copilot' report
+pilotNames <- "Maggie Perry" # insert the pilot's name here e.g., "Tom Hardwicke".
+copilotNames <- "Rondeline Williams" # # insert the co-pilot's name here e.g., "Michael Frank".
+pilotTTC <- 400 # insert the pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
+copilotTTC <- 60 # insert the co-pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
+pilotStartDate <- 11/5/19 # insert the piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+copilotStartDate <- 11/8/19 # insert the co-piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- NA # insert the date of final report completion in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+```
+
+------
+
+#### Methods summary: 
+
+Study 1's key outcomes are the differences in participants' ratings of expected curiosity and interest in their "time capsule" items at Time 1 and their actual curiousity and interest at Time 2. Measures of predicted/actual curiosity and interest (a composite measure of surprise, meaningfulness, and interest) in viewing 9 time capsule items are taken at each time point respectively. T-tests are used to measure differences in mean curiosity and interest ratings (collapsed across the 9 items) across the two time points, and Time 1 means are subtracted from Time 2 means to capture participants' underestimate.
+
+------
+
+#### Target outcomes: 
+
+"Table 1 provides descriptive statistics for each measure for Study 1.
+Participants’ Time 1 predictions of their curiosity (M = 3.99, SD = 1.32) were lower than their actual curiosity ratings at Time 2, immediately before reading their responses (M = 4.34, SD = 1.25), t(105) = 2.88, p = .005, d = 0.27. Participants also underestimated how interesting they would find their responses. Predictions of interest at Time 1 (M = 3.54, SD = 1.01) were lower than ratings of actual interest experienced at Time 2 (M = 3.82, SD = 0.89), t(105) = 3.10, p = .003, d = 0.29.""  
+
+------
+
+
+```{r global_options, include=FALSE}
+# sets up some formatting options for the R Markdown document
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# Step 1: Load packages and prepare report object
+
+
+```{r}
+# load packages
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(ReproReports) # custom reporting functions
+library(lsr) # calculating cohen's d
+library(rcompanion) #calculating confidence intervals
+library(ltm) #calculating cronbach's alpha
+```
+
+
+```{r}
+# Prepare report object. This will be updated automatically by the reproCheck function each time values are compared
+reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = NA, valueType = NA, percentageError = NA, comparisonOutcome = NA, eyeballCheck = NA)
+```
+
+# Step 2: Load data
+
+```{r}
+data <- read_sav("GroupC_2-10-2014/data/Study1_Data.sav")
+View(data) #135 rows matches 135 participants reported before exclusions
+```
+
+# Step 3: Tidy data
+
+```{r}
+data <- data %>%
+  filter(!is.na(Order)) #removed those who didn't return for T2 - matches 106 participants reported after exclusion
+
+View(data)
+
+```
+
+# Step 4: Run analysis
+
+## Pre-processing
+
+```{r}
+#"Across the nine prompts, participants’ ratings of their curiosity and interest were highly intercorrelated (αcuriosity = .93, αinterest = .90)."
+
+#Curiosity alpha = 0.93
+curious.items <- dplyr::select(data, T1_Roommate_Curious, T1_Social_Curious, T1_Essay_Curious, T1_Convo_Curious, T1_Song_Curious, T1_Finals_Curious, T1_Joke_Curious, T1_Photo_Curious, T1_FB_Curious, T2_Roommate_curious, T2_Social_curious, T2_Essay_curious, T2_Convo_curious, T2_Song_curious, T2_Finals_curious, T2_Joke_curious, T2_Photo_curious, T2_FB_curious)
+curious.alpha <- cronbach.alpha(curious.items, na.rm = TRUE)
+
+View(curious.items)
+View(curious.alpha)
+
+#Interesting Composite alpha = 0.90
+interestcomp.items <- dplyr::select(data, T1_Roommate_Interest_composite, T1_Social_Interest_composite, T1_Essay_Interest_composite, T1_Convo_Interest_composite, T1_Song_Interest_composite, T1_Finals_Interest_composite, T1_Joke_Interest_composite, T1_Photo_Interest_composite, T1_FB_Interest_composite, T2_Roommate_Interest_composite, T2_Social_Interest_composite, T2_Essay_Interest_composite, T2_Convo_Interest_composite, T2_Song_Interest_composite, T2_Finals_Interest_composite, T2_Joke_Interest_composite, T2_Photo_Interest_composite, T2_FB_Interest_composite)
+interestcomp.alpha <- cronbach.alpha(interestcomp.items, na.rm = TRUE)
+
+View(interestcomp.items)
+View(interestcomp.alpha)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '.93', obtainedValue = curious.alpha["alpha"], valueType = 'other') #minor error
+reportObject <- reproCheck(reportedValue = '.90', obtainedValue = interestcomp.alpha["alpha"], valueType = 'other')
+
+#RW Note- It seems reproCheck is running entire list of 'curious.alpha' and 'interestcomp.alpha' (both length=5), as separate reported values. Since we are only reproducing alphas, I added ["alpha"] to 'curious.alpha' and 'interestcomp.alpha' in the reproCheck functions
+
+```
+
+## Descriptive statistics
+
+```{r}
+
+#"Table 1 provides descriptive statistics for each measure for Study 1."
+
+#T1 Means (& Standard deviations for Curiosity & Interest Composite)
+
+#Curiosity T1 mean = 3.99 [3.74, 4.24], SD = 1.32
+T1.curious <- groupwiseMean(T1_Curious ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+T1sd.curious <- sd(data$T1_Curious, na.rm = TRUE)
+
+View(T1.curious)
+View(T1sd.curious)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.99', obtainedValue = T1.curious$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.74', obtainedValue = T1.curious$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.24', obtainedValue = T1.curious$Trad.upper, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '1.32', obtainedValue = T1sd.curious, valueType = 'sd')
+
+
+#Interest Composite T1 mean = 3.54 [3.34, 3.73], SD = 1.01
+T1.interestcomp <- groupwiseMean(T1_Interest_Composite ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+T1sd.interestcomp <- sd(data$T1_Interest_Composite, na.rm = TRUE)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.54', obtainedValue = T1.interestcomp$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.34', obtainedValue = T1.interestcomp$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '3.73', obtainedValue = T1.interestcomp$Trad.upper, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '1.01', obtainedValue = T1sd.interestcomp, valueType = 'sd')
+
+
+#Surprise T1 mean = 2.84 [2.64, 3.05]
+T1.surprise <- groupwiseMean(T1_Surprised ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '2.84', obtainedValue = T1.surprise$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '2.64', obtainedValue = T1.surprise$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '3.05', obtainedValue = T1.surprise$Trad.upper, valueType = 'ci')
+
+
+#Meaningfulness T1 mean = 3.81 [3.60, 4.03]
+T1.meaningful <- groupwiseMean(T1_Meaningful ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.81', obtainedValue = T1.meaningful$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.60', obtainedValue = T1.meaningful$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.03', obtainedValue = T1.meaningful$Trad.upper, valueType = 'ci')
+
+
+#Interesting T1 mean = 3.95 [3.73, 4.18]
+T1.interest <- groupwiseMean(T1_Interesting ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.95', obtainedValue = T1.interest$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.73', obtainedValue = T1.interest$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.18', obtainedValue = T1.interest$Trad.upper, valueType = 'ci')
+
+
+#T2 Means (&Standard deviations for Curiosity & Interest Composite)
+#Curiosity T2 mean = 4.34 [4.10, 4.58], SD = 1.25
+T2.curious <- groupwiseMean(T2_Curious ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+T2sd.curious <- sd(data$T2_Curious, na.rm = TRUE)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '4.34', obtainedValue = T2.curious$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '4.10', obtainedValue = T2.curious$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.58', obtainedValue = T2.curious$Trad.upper, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '1.25', obtainedValue = T2sd.curious, valueType = 'sd')
+
+
+#Interest Composite T2 mean = 3.82 [3.65, 4.00], SD = 0.89
+T2.interestcomp <- groupwiseMean(T2_Interest_Composite ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+T2sd.interestcomp <- sd(data$T2_Interest_Composite, na.rm = TRUE)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.82', obtainedValue = T2.interestcomp$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.65', obtainedValue = T2.interestcomp$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.00', obtainedValue = T2.interestcomp$Trad.upper, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '0.89', obtainedValue = T2sd.interestcomp, valueType = 'sd')
+
+
+#Surprise T2 mean = 3.25 [3.06, 3.44]
+T2.surprise <- groupwiseMean(T2_Surprised ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.25', obtainedValue = T2.surprise$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.06', obtainedValue = T2.surprise$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '3.44', obtainedValue = T2.surprise$Trad.upper, valueType = 'ci')
+
+
+#Meaningfulness T2 mean = 4.04 [3.84, 4.23]
+T2.meaningful <- groupwiseMean(T2_Meaningful ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '4.04', obtainedValue = T2.meaningful$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '3.84', obtainedValue = T2.meaningful$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.23', obtainedValue = T2.meaningful$Trad.upper, valueType = 'ci')
+
+
+#Interesting T2 mean = 4.19 [4.00, 4.38]
+T2.interest <- groupwiseMean(T2_Interesting ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 3)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '4.19', obtainedValue = T2.interest$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '4.00', obtainedValue = T2.interest$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '4.38', obtainedValue = T2.interest$Trad.upper, valueType = 'ci')
+
+
+#Underestimates
+#Curiosity underestimate = 0.35 [0.11, 0.59]
+dif.curious <- groupwiseMean(Curious_diff ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 2)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '0.35', obtainedValue = dif.curious$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '0.11', obtainedValue = dif.curious$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '0.59', obtainedValue = dif.curious$Trad.upper, valueType = 'ci')
+
+
+#Interest Composite underestimate = 0.29 [0.10, 0.47]
+dif.interestcomp <- groupwiseMean(Interest_composite_diff ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 2)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '0.29', obtainedValue = dif.interestcomp$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '0.10', obtainedValue = dif.interestcomp$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '0.47', obtainedValue = dif.interestcomp$Trad.upper, valueType = 'ci')
+
+
+#Surprise underestimate = 0.40 [0.19, 0.62]
+data$Surprised_diff <- data$T2_Surprised - data$T1_Surprised
+dif.surprise <- groupwiseMean(Surprised_diff ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 2)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '0.40', obtainedValue = dif.surprise$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '0.19', obtainedValue = dif.surprise$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '0.62', obtainedValue = dif.surprise$Trad.upper, valueType = 'ci')
+
+
+#Meaningfulness underestimate = 0.22 [0.03, 0.42]
+data$Meaningful_diff <- data$T2_Meaningful - data$T1_Meaningful
+dif.meaningful <- groupwiseMean(Meaningful_diff ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 2)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '0.22', obtainedValue = dif.meaningful$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '0.03', obtainedValue = dif.meaningful$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '0.42', obtainedValue = dif.meaningful$Trad.upper, valueType = 'ci')
+
+
+#Interesting underestimate = 0.23 [0.02, 0.45]
+data$Interesting_diff <- data$T2_Interesting - data$T1_Interesting
+dif.interest <- groupwiseMean(Interesting_diff ~ 1, 
+              data   = data, 
+              conf   = 0.95, 
+              digits = 2)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '0.23', obtainedValue = dif.interest$Mean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '0.02', obtainedValue = dif.interest$Trad.lower, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = '0.45', obtainedValue = dif.interest$Trad.upper, valueType = 'ci')
+
+
+#Create vectors for columns (variable, T1 mean/CI, T2 mean/CI, Underestimate)
+Measure <- c("curiosity", "interestcomp", "surpise", "meaningful", "interest")
+
+T1Mean <- c(T1.curious$Mean, T1.interestcomp$Mean, T1.surprise$Mean, T1.meaningful$Mean, T1.interest$Mean)
+
+T1LowerCI <- c(T1.curious$Trad.lower, T1.interestcomp$Trad.lower, T1.surprise$Trad.lower, T1.meaningful$Trad.lower, T1.interest$Trad.lower)
+
+T1UpperCI <- c(T1.curious$Trad.upper, T1.interestcomp$Trad.upper, T1.surprise$Trad.upper, T1.meaningful$Trad.upper, T1.interest$Trad.upper)
+
+T2Mean <- c(T2.curious$Mean, T2.interestcomp$Mean, T2.surprise$Mean, T2.meaningful$Mean, T2.interest$Mean)
+
+T2LowerCI <- c(T2.curious$Trad.lower, T2.interestcomp$Trad.lower, T2.surprise$Trad.lower, T2.meaningful$Trad.lower, T2.interest$Trad.lower)
+
+T2UpperCI <- c(T2.curious$Trad.upper, T2.interestcomp$Trad.upper, T2.surprise$Trad.upper, T2.meaningful$Trad.upper, T2.interest$Trad.upper)
+
+Underestimate <- round(c(dif.curious$Mean, dif.interestcomp$Mean, dif.surprise$Mean, dif.meaningful$Mean, dif.interest$Mean), digits = 2)
+
+UndLowerCI <- c(dif.curious$Trad.lower, dif.interestcomp$Trad.lower, dif.surprise$Trad.lower, dif.meaningful$Trad.lower, dif.interest$Trad.lower)
+
+UndUpperCI <- c(dif.curious$Trad.upper, dif.interestcomp$Trad.upper, dif.surprise$Trad.upper, dif.meaningful$Trad.upper, dif.interest$Trad.upper)
+
+```
+
+## Inferential statistics
+
+```{r}
+
+#">Participants’ Time 1 predictions of their curiosity (M = 3.99, SD = 1.32) were lower than their actual curiosity ratings at Time 2, immediately before reading their responses (M = 4.34, SD = 1.25), t(105) = 2.88, p = .005, d = 0.27."
+
+#T test - Curious
+t.curious <- t.test(data$T2_Curious, data$T1_Curious, paired = TRUE)
+
+#Cohen's d = 0.28 ******* reported value is 0.27 - is this a rounding error?
+d.curious <- cohensD(data$T1_Curious, data$T2_Curious, method = "paired")
+View(d.curious)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '2.88', obtainedValue = t.curious$statistic, valueType = 't')
+reportObject <- reproCheck(reportedValue = '0.005', obtainedValue = t.curious$p.value, valueType = 'p')
+reportObject <- reproCheck(reportedValue = '0.27', obtainedValue = d.curious, valueType = 'd') #minor error
+
+#RW Note- Also concluded d=.0279. Likely a rounding error on the author's part.
+
+#">Participants also underestimated how interesting they would find their responses. Predictions of interest at Time 1 (M = 3.54, SD = 1.01) were lower than ratings of actual interest experienced at Time 2 (M = 3.82, SD = 0.89), t(105) = 3.10, p = .003, d = 0.29."
+
+#T test - Interesting Composite
+t.interestcomp <- t.test(data$T2_Interest_Composite, data$T1_Interest_Composite, paired = TRUE)
+
+#Cohen's d = 0.30 ******* off slightly again - probably not rounding error this time?
+d.interestcomp <- cohensD(data$T1_Interest_Composite, data$T2_Interest_Composite, method = "paired")
+
+View(d.interestcomp)
+
+#Value Comparisons
+reportObject <- reproCheck(reportedValue = '3.10', obtainedValue = t.interestcomp$statistic, valueType = 't')
+reportObject <- reproCheck(reportedValue = '0.003', obtainedValue = t.interestcomp$p.value, valueType = 'p')
+reportObject <- reproCheck(reportedValue = '0.29', obtainedValue = d.interestcomp, valueType = 'd') #minor error
+
+#RW Note: I went back to the original paper and took a look at Table 1 where all t-tests, df, p-values, and ds are listed and I suspect there are small errors in the "Underestimate" column due to rounding error. Several of the values seem like they were rounded and then rounded again, causing this small difference between reported and observed values in this report.  
+
+#T test - Surprise p = 0.0004
+t.surprise <- t.test(data$T2_Surprised, data$T1_Surprised, paired = TRUE)
+
+#Value Comparison
+reportObject <- reproCheck(reportedValue = '<.001', obtainedValue = t.surprise$p.value, valueType = 'p', eyeballCheck = TRUE)
+
+
+#T test - Meaningful p = 0.02
+t.meaningful <- t.test(data$T2_Meaningful, data$T1_Meaningful, paired = TRUE)
+
+#Value Comparison
+reportObject <- reproCheck(reportedValue = '.02', obtainedValue = t.meaningful$p.value, valueType = 'p')
+
+
+#T test - Interesting p = 0.03
+t.interest <- t.test(data$T2_Interesting, data$T1_Interesting, paired = TRUE)
+
+#Value Comparison
+reportObject <- reproCheck(reportedValue = '.03', obtainedValue = t.interest$p.value, valueType = 'p')
+
+
+#Create vector for p values
+p <- round(c(t.curious$p.value, t.interestcomp$p.value, t.surprise$p.value, t.meaningful$p.value, t.interest$p.value), digits = 3)
+
+
+#Create table
+table <- kable(cbind(Measure, T1Mean, T1LowerCI, T1UpperCI, T2Mean, T2LowerCI, T2UpperCI, Underestimate, UndLowerCI, UndUpperCI, p))
+table
+```
+
+# Step 5: Conclusion
+
+The original study reported mean ratings of participants' curiosity, interest, surprise, and meaningfulness (and created a composite for interest) at two different time points. They then calculated the difference in those means for a "underestimate" rating. They then ran t-tests and reported the results of these for curiosity and interest composite, as well as reporting p values for all variables. I was able to reproduce all of these results, but I did encounter three minor errors:
+1. The authors calculated alphas to show intercorrelation between 9 items they measured DVs on, which they then collapsed. For curiosity, I obtained an alpha of .925, consistent with the reported value of .93, but this was considered a minor error in the reproCheck. 
+2. For curiosity, I obtained an effect size of d = .279, which I would round to .28, but the authors reported d = .27. I suspect this is a rounding error on the authors' end.
+3. I also obtained a d value slightly different than the reported one for the interest composite variable; I obtained .300, while they reported .29. This is again a minor error, although unlikely that this was a rounding error; perhaps it is a result of using different versions of R or packages.
+
+
+
+```{r}
+reportObject <- reportObject %>%
+  filter(dummyRow == FALSE) %>% # remove the dummy row
+  select(-dummyRow) %>% # remove dummy row designation
+  mutate(articleID = articleID) %>% # add variables to report 
+  select(articleID, everything()) # make articleID first column
+
+# decide on final outcome
+if(any(reportObject$comparisonOutcome %in% c("MAJOR_ERROR", "DECISION_ERROR"))){
+  finalOutcome <- "Failure"
+}else{
+  finalOutcome <- "Success"
+}
+
+# collate report extra details
+reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, finalOutcome)
+
+# save report objects
+if(reportType == "pilot"){
+  write_csv(reportObject, "pilotReportDetailed.csv")
+  write_csv(reportExtras, "pilotReportExtras.csv")
+}
+
+if(reportType == "copilot"){
+  write_csv(reportObject, "copilotReportDetailed.csv")
+  write_csv(reportExtras, "copilotReportExtras.csv")
+}
+```
+
+# Session information
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
